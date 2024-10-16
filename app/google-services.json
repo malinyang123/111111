@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "384802008671",
+    "firebase_url": "https://floodhelp-8e390-default-rtdb.firebaseio.com",
+    "project_id": "floodhelp-8e390",
+    "storage_bucket": "floodhelp-8e390.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:384802008671:android:fea5c3c70405e535adb5ea",
+        "android_client_info": {
+          "package_name": "com.example.myapplication6"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "384802008671-f9lgk97prdr3godgkquv29mjmi7ra9oj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAUMLHth04pnl2X5-I6OGVr9vNBA2dAYT4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "384802008671-f9lgk97prdr3godgkquv29mjmi7ra9oj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
