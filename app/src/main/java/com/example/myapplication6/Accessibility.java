@@ -49,9 +49,6 @@ public class Accessibility extends AppCompatActivity {
             } else if (item.getItemId() == R.id.Contacts) {
                 Intent contactsIntent = new Intent(Accessibility.this,  Contacts.class);
                 startActivity(contactsIntent);
-            } else if (item.getItemId() == R.id.Profile) {
-                Intent libraryIntent = new Intent(Accessibility.this,  Profile.class);
-                startActivity(libraryIntent);
             }
             return true;
         });
@@ -122,9 +119,9 @@ public class Accessibility extends AppCompatActivity {
 
 
         // 根据存储的状态应用高对比度模式、背景颜色和色盲模式
-        applyHighContrastMode(isHighContrastModeEnabled);
-        applyBackgroundColor(isBackgroundBlack);
-        applyColorblindMode(savedColorblindMode);  // 应用色盲模式
+        //applyHighContrastMode(isHighContrastModeEnabled);
+        //applyBackgroundColor(isBackgroundBlack);
+        //applyColorblindMode(savedColorblindMode);  // 应用色盲模式
     }
 
     // 启用或禁用高对比度模式

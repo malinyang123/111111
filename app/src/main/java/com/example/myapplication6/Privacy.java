@@ -70,9 +70,6 @@ public class Privacy extends AppCompatActivity {
             } else if (item.getItemId() == R.id.Contacts) {
                 Intent contactsIntent = new Intent(Privacy.this, Contacts.class);
                 startActivity(contactsIntent);
-            } else if (item.getItemId() == R.id.Profile) {
-                Intent libraryIntent = new Intent(Privacy.this, Profile.class);
-                startActivity(libraryIntent);
             }
             return true;
         });

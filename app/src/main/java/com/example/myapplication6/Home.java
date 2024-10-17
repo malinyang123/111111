@@ -156,9 +156,6 @@ public class Home extends AppCompatActivity {
             } else if (item.getItemId() == R.id.Contacts) {
                 Intent contactsIntent = new Intent(Home.this,  Contacts.class);
                 startActivity(contactsIntent);
-            } else if (item.getItemId() == R.id.Profile) {
-                Intent libraryIntent = new Intent(Home.this,  Profile.class);
-                startActivity(libraryIntent);
             }
             return true;
         });

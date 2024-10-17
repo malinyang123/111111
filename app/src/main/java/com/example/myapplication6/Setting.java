@@ -30,6 +30,7 @@ public class Setting extends AppCompatActivity {
     private static final String TAG = "ProfileNotLog";
     private TextView text_private;
     // UI 元素
+    private TextView text_profile;
     private ImageView mB_profile;
     private ImageView contact_button;
     private TextView text_login;
@@ -82,6 +83,16 @@ public class Setting extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+
+        text_profile = findViewById(R.id.edit_profile);
+        text_profile .setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(Setting.this, Profile.class);
+                startActivity(intent);
+            }
+        });
+
         bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             if (item.getItemId() == R.id.home) {
@@ -93,9 +104,6 @@ public class Setting extends AppCompatActivity {
             } else if (item.getItemId() == R.id.Contacts) {
                 Intent contactsIntent = new Intent(Setting.this,  Contacts.class);
                 startActivity(contactsIntent);
-            } else if (item.getItemId() == R.id.Profile) {
-                Intent libraryIntent = new Intent(Setting.this,  Profile.class);
-                startActivity(libraryIntent);
             }
             return true;
         });
@@ -149,7 +157,7 @@ public class Setting extends AppCompatActivity {
                 // 尝试从 SharedPreferences 中获取用户名
                 String username = sharedPreferences.getString(KEY_USERNAME, "User");
                 text_login.setText(R.string.logout);
-               // text_username.setText(username);
+                // text_username.setText(username);
                 // 您也可以在此处重新初始化 currentUser
                 retrieveCurrentUser(username);
             }

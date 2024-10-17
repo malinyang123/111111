@@ -15,7 +15,6 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -39,11 +38,6 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.openmeteo.sdk.VariablesWithTime;
-import com.openmeteo.sdk.WeatherApiResponse;
-import com.openmeteo.sdk.VariablesSearch;
-import com.openmeteo.sdk.VariableWithValues;
-import com.openmeteo.sdk.Variable;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -60,11 +54,17 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.openmeteo.sdk.Variable;
+import com.openmeteo.sdk.VariableWithValues;
+import com.openmeteo.sdk.VariablesSearch;
+import com.openmeteo.sdk.VariablesWithTime;
+import com.openmeteo.sdk.WeatherApiResponse;
 
 public class Map extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -229,7 +229,7 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             googleMap.setMyLocationEnabled(true);
             showCurrentLocationWeather();
-            fetchGeoJsonData();  // Fetch and display GeoJSON data
+            fetchGeoJsonData();  // Fetch and display GeoJSON data for accessibility facilities
         } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
@@ -245,6 +245,8 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
             public void onInfoWindowClick(Marker marker) {
                 if (marker.getTag().equals("current_location")) {
                     showRainfallInputDialog(marker);
+                } else if (marker.getTag().equals("group_member")) {
+                    showRainfallInputDialogForGroup(marker);
                 }
             }
         });
@@ -397,14 +399,11 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                 String facilityName = properties.optString("name", "Accessibility");
 
                 LatLng location = new LatLng(latitude, longitude);
-                Marker marker = googleMap.addMarker(new MarkerOptions()
+                googleMap.addMarker(new MarkerOptions()
                         .position(location)
                         .title(facilityName)
                         .snippet("Accessibility Facility")
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
-                marker.setTag("facility_location");
-
-                fetchFacilityRainfall(latitude, longitude, marker);
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))); // 无障碍设施不需要涂色
             }
         } catch (JSONException e) {
             Toast.makeText(this, "Error adding markers from GeoJSON", Toast.LENGTH_SHORT).show();
@@ -446,9 +445,22 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                 .variable(Variable.precipitation)
                 .first();
 
-        marker.setSnippet("Precipitation: " + precipitation.values(0) + " mm");
+        float precipitationValue = precipitation.values(0);
+        marker.setSnippet("Precipitation: " + precipitationValue + " mm");
         marker.showInfoWindow();
 
+        // 群组用户需要涂色
+        LatLng memberLatLng = marker.getPosition();
+        CircleOptions circleOptions = new CircleOptions()
+                .center(memberLatLng)
+                .radius(100)
+                .strokeColor(Color.BLACK)
+                .fillColor(getColorForRainfall(precipitationValue))
+                .strokeWidth(5);
+        googleMap.addCircle(circleOptions);
+
+        // 检查洪水风险
+        checkFloodRisk(precipitationValue, memberLatLng);
         buffer.clear();
     }
 
@@ -515,7 +527,7 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
         String warningMessage = null;
 
         if (precipitation > 50) {
-            warningMessage = "The current rainfall is greater than 50mm, and there is a high probability of flooding! Please pay attention to safety.";
+            warningMessage = "Group member's location has a high risk of flooding with rainfall exceeding 50mm. Please take precautions.";
             new AlertDialog.Builder(this)
                     .setTitle("Flood risk")
                     .setMessage(warningMessage)
@@ -532,7 +544,7 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                     })
                     .show();
         } else if (precipitation >= 25 && precipitation <= 50) {
-            warningMessage = "The current precipitation is between 25mm and 50mm. There is a high probability of flooding, so please take precautions.";
+            warningMessage = "Group member's location has a moderate risk of flooding with rainfall between 25mm and 50mm.";
             new AlertDialog.Builder(this)
                     .setTitle("Flood risk")
                     .setMessage(warningMessage)
@@ -543,7 +555,7 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
         if (warningMessage != null) {
             googleMap.addMarker(new MarkerOptions()
                             .position(location)
-                            .title("Flood risk warning")
+                            .title("Group member flood warning")
                             .snippet(warningMessage))
                     .showInfoWindow();
         }
@@ -588,6 +600,48 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                         .snippet(marker.getSnippet())
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
                 newMarker.setTag("current_location");
+                googleMap.addCircle(circleOptions);
+                checkFloodRisk(manualRainfall, marker.getPosition());
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+
+        builder.show();
+    }
+
+    private void showRainfallInputDialogForGroup(Marker marker) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Set rainfall for group member");
+
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        builder.setView(input);
+
+        builder.setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                float manualRainfall = Float.parseFloat(input.getText().toString());
+                marker.setSnippet("Precipitation: " + manualRainfall + " mm");
+                marker.showInfoWindow();
+                marker.remove();
+                CircleOptions circleOptions = new CircleOptions()
+                        .center(marker.getPosition())
+                        .radius(100)
+                        .strokeColor(Color.BLACK)
+                        .fillColor(getColorForRainfall(manualRainfall))
+                        .strokeWidth(5);
+                Marker newMarker = googleMap.addMarker(new MarkerOptions()
+                        .position(marker.getPosition())
+                        .title(marker.getTitle())
+                        .snippet(marker.getSnippet())
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+                newMarker.setTag("group_member");
                 googleMap.addCircle(circleOptions);
                 checkFloodRisk(manualRainfall, marker.getPosition());
             }
