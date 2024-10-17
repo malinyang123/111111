@@ -100,17 +100,6 @@
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/security"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:drawablePadding="16dp"
-                        android:gravity="center_vertical"
-                        android:padding="12dp"
-                        android:text="Security"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <TextView
                         android:id="@+id/notifications"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -134,15 +123,6 @@
             </androidx.cardview.widget.CardView>
 
             <!-- Support & About Section -->
-            <TextView
-                android:id="@+id/support_section"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:paddingTop="16dp"
-                android:text="Support/About"
-                android:textSize="18sp"
-                android:textStyle="bold" />
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
@@ -156,41 +136,7 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/my_subscription"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:drawablePadding="16dp"
-                        android:gravity="center_vertical"
-                        android:padding="12dp"
-                        android:text="My Subscription"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/help_support"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:drawablePadding="16dp"
-                        android:gravity="center_vertical"
-                        android:padding="12dp"
-                        android:text="Help/Support"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/terms_policies"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:drawablePadding="16dp"
-                        android:gravity="center_vertical"
-                        android:padding="12dp"
-                        android:text="Terms and Policies"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
+                    android:orientation="vertical"/>
             </androidx.cardview.widget.CardView>
 
             <!-- Cache & Cellular Section -->
@@ -221,27 +167,9 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <TextView
-                        android:id="@+id/report_problem"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:drawablePadding="16dp"
-                        android:gravity="center_vertical"
-                        android:padding="12dp"
-                        android:text="Report a problem"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/add_account"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:drawablePadding="16dp"
-                        android:gravity="center_vertical"
-                        android:padding="12dp"
-                        android:text="Add account"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
+
+
 
                     <TextView
                         android:id="@+id/logout"
