@@ -28,7 +28,7 @@ public class Setting extends AppCompatActivity {
     BottomNavigationView bottomNavigationView;
     // 日志标签
     private static final String TAG = "ProfileNotLog";
-
+    private TextView text_private;
     // UI 元素
     private ImageView mB_profile;
     private ImageView contact_button;
@@ -71,6 +71,16 @@ public class Setting extends AppCompatActivity {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
+        });
+
+
+        text_private = findViewById(R.id.privacy);
+        text_private .setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(Setting.this, Privacy.class);
+                startActivity(intent);
+            }
         });
         bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setOnItemSelectedListener(item -> {

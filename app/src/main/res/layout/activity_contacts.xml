@@ -8,6 +8,15 @@
     tools:context=".Home">
 
 
+    <ImageView
+        android:id="@+id/imageView12"
+        android:layout_width="wrap_content"
+        android:layout_height="1dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:srcCompat="@drawable/bar" />
+
+
     <TextView
         android:id="@+id/contact_title"
         android:layout_width="wrap_content"
@@ -68,10 +77,11 @@
         android:id="@+id/rv_group_members"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/contact_name_blank"
+        app:layout_constraintBottom_toTopOf="@id/imageView12"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/contact_name_blank" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"/>
 
     <!-- 添加的提醒文字，放在页面底部，导航栏上方 -->
     <TextView
@@ -92,10 +102,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/go_to_login"
-        android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/imageView12"
         app:layout_constraintStart_toStartOf="parent"
-        tools:layout_editor_absoluteY="759dp" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:visibility="gone"/>
+
 
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:id="@+id/coordinatorLayout"
@@ -114,8 +125,6 @@
             app:itemTextColor="@color/colorPrimary" />
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
-
-
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

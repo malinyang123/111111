@@ -24,7 +24,6 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -34,7 +33,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 public class Contacts extends AppCompatActivity {
 
     private EditText etAssociatePhone;
@@ -44,11 +43,11 @@ public class Contacts extends AppCompatActivity {
     private List<User> groupMembers;
     String Tag = "my_tag";
     private DatabaseReference usersRef;
-    private ImageView mB_profile;
-    private ImageView mB_home;
+    BottomNavigationView bottomNavigationView;
+
     // 用于存储当前用户的电话号码
     private String currentUserPhone = null;
-    BottomNavigationView bottomNavigationView;
+
     // 新增的视图
     private TextView tvReminder;
     private Button btnGoToLogin;
@@ -119,7 +118,8 @@ public class Contacts extends AppCompatActivity {
             }
         } else {
             // 用户未登录，显示提醒
-            //showLoginReminder();
+            Intent settingIntent = new Intent(Contacts.this, login_activity.class);
+            startActivity(settingIntent);
         }
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
@@ -127,11 +127,11 @@ public class Contacts extends AppCompatActivity {
             if (item.getItemId() == R.id.home) {
                 Intent homeIntent = new Intent(Contacts.this, Home.class);
                 startActivity(homeIntent);
-            } else if (item.getItemId() == R.id.Contacts) {
-                Intent settingIntent = new Intent(Contacts.this, Contacts.class);
-                startActivity(settingIntent);
             } else if (item.getItemId() == R.id.Setting) {
-                Intent contactsIntent = new Intent(Contacts.this,  Setting.class);
+                Intent settingIntent = new Intent(Contacts.this, Setting.class);
+                startActivity(settingIntent);
+            } else if (item.getItemId() == R.id.Contacts) {
+                Intent contactsIntent = new Intent(Contacts.this,  Contacts.class);
                 startActivity(contactsIntent);
             } else if (item.getItemId() == R.id.Profile) {
                 Intent libraryIntent = new Intent(Contacts.this,  Profile.class);
@@ -222,7 +222,7 @@ public class Contacts extends AppCompatActivity {
 
         btnGoToLogin.setOnClickListener(v -> {
             // 跳转到 Profile 页面（假设您的 Profile 活动为 ProfileNotLog）
-            Intent intent = new Intent(Contacts.this, Setting.class);
+            Intent intent = new Intent(Contacts.this, login_activity.class);
             startActivity(intent);
         });
     }

@@ -18,10 +18,10 @@
         android:theme="@style/Theme.MyApplication6"
         tools:targetApi="31">
         <activity
-            android:name=".Profile"
+            android:name=".Privacy"
             android:exported="false" />
         <activity
-            android:name=".SettingNotLog"
+            android:name=".Profile"
             android:exported="false" />
         <activity
             android:name=".Setting"
@@ -49,7 +49,7 @@
             android:name=".Accessibility"
             android:exported="false" />
         <activity
-            android:name=".ProfileLogin"
+            android:name=".ProfileNotLog"
             android:exported="false" />
         <activity
             android:name=".Home"

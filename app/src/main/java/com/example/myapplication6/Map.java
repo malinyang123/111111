@@ -58,12 +58,11 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
-import java.util.ArrayList;
-import java.util.List;
-// 导入 Firebase 数据库相关类
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -78,7 +77,7 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
     private FusedLocationProviderClient fusedLocationClient;
     private ImageView mBtnFirst;
     FloatingActionButton fab;
-    // 新增：Firebase 数据库引用
+    // Firebase Database reference
     private DatabaseReference usersRef;
 
     @Override
@@ -115,6 +114,24 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                 startActivity(intent);
             }
         });
+
+        updateUserLocation();
+    }
+
+    // Update user location
+    private void updateUserLocation() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
+                @Override
+                public void onSuccess(Location location) {
+                    if (location != null) {
+                        double latitude = location.getLatitude();
+                        double longitude = location.getLongitude();
+                        updateUserLocationInDatabase(latitude, longitude);
+                    }
+                }
+            });
+        }
     }
 
     private void showBottomDialog() {
@@ -132,27 +149,23 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
             }
         });
 
-        // 调用获取群组成员信息的逻辑
         getGroupMembersInfo(new OnGroupMembersInfoRetrievedListener() {
             @Override
             public void onGroupMembersInfoRetrieved(List<GroupMemberInfo> groupMembers) {
                 if (groupMembers != null && !groupMembers.isEmpty()) {
                     for (GroupMemberInfo member : groupMembers) {
-                        // 创建动态视图来显示群组成员信息
                         LinearLayout memberLayout = new LinearLayout(Map.this);
                         memberLayout.setOrientation(LinearLayout.HORIZONTAL);
                         memberLayout.setPadding(10, 10, 10, 10);
 
-                        // 添加成员头像
                         ImageView memberIcon = new ImageView(Map.this);
                         memberIcon.setLayoutParams(new LinearLayout.LayoutParams(
                                 LinearLayout.LayoutParams.WRAP_CONTENT,
                                 LinearLayout.LayoutParams.WRAP_CONTENT
                         ));
-                        memberIcon.setImageResource(R.drawable.user1); // 使用默认头像
+                        memberIcon.setImageResource(R.drawable.user1); // Default user icon
                         memberLayout.addView(memberIcon);
 
-                        // 显示成员名字
                         TextView memberName = new TextView(Map.this);
                         memberName.setText(member.remark != null ? member.remark : member.phoneNumber);
                         memberName.setTextSize(25);
@@ -160,10 +173,22 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                         memberName.setPadding(30, 0, 0, 0);
                         memberLayout.addView(memberName);
 
-                        // 如果存在经纬度信息，则显示地址，否则显示未登录提示
                         TextView memberLocation = new TextView(Map.this);
                         if (member.latitude != null && member.longitude != null) {
-                            memberLocation.setText("Location Set");  // 你可以根据具体情况显示地点名
+                            memberLocation.setText("Lat: " + member.latitude + ", Lon: " + member.longitude);
+                            LatLng memberLatLng = new LatLng(member.latitude, member.longitude);
+
+                            // Add marker for group member location
+                            Marker marker = googleMap.addMarker(new MarkerOptions()
+                                    .position(memberLatLng)
+                                    .title(member.remark)
+                                    .snippet("Group member location")
+                                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+                            marker.setTag("group_member");
+
+                            // Fetch and display rainfall for group members
+                            fetchFacilityRainfall(member.latitude, member.longitude, marker);
+
                         } else {
                             memberLocation.setText("Not Logged In");
                         }
@@ -172,10 +197,8 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                         memberLocation.setPadding(90, 0, 0, 0);
                         memberLayout.addView(memberLocation);
 
-                        // 将生成的成员布局添加到列表中
                         groupMemberList.addView(memberLayout);
 
-                        // 添加分割线
                         View divider = new View(Map.this);
                         divider.setLayoutParams(new LinearLayout.LayoutParams(
                                 LinearLayout.LayoutParams.MATCH_PARENT, 1
@@ -184,7 +207,6 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                         groupMemberList.addView(divider);
                     }
                 } else {
-                    // 如果群组成员信息为空，则只显示提示
                     TextView noMemberInfo = new TextView(Map.this);
                     noMemberInfo.setText("No group members available");
                     noMemberInfo.setTextSize(20);
@@ -199,10 +221,7 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         dialog.getWindow().getAttributes().windowAnimations = R.style.DialogAnimation;
         dialog.getWindow().setGravity(Gravity.BOTTOM);
-        Window window = dialog.getWindow();
-        window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
     }
-
 
     @Override
     public void onMapReady(GoogleMap map) {
@@ -210,7 +229,7 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             googleMap.setMyLocationEnabled(true);
             showCurrentLocationWeather();
-            fetchGeoJsonData();  // 获取并显示 GeoJSON 数据
+            fetchGeoJsonData();  // Fetch and display GeoJSON data
         } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
@@ -225,7 +244,7 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
             @Override
             public void onInfoWindowClick(Marker marker) {
                 if (marker.getTag().equals("current_location")) {
-                    showRainfallInputDialog(marker);  // 只有当前位置可以手动设置降水量
+                    showRainfallInputDialog(marker);
                 }
             }
         });
@@ -244,7 +263,6 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
         }
     }
 
-    // 获取当前天气数据
     private void fetchWeatherData() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             fusedLocationClient.getLastLocation()
@@ -254,8 +272,6 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                             if (location != null) {
                                 double latitude = location.getLatitude();
                                 double longitude = location.getLongitude();
-
-                                // 使用 OpenMeteo API 获取降水量数据
                                 String url = "https://api.open-meteo.com/v1/forecast?latitude=" + latitude
                                         + "&longitude=" + longitude
                                         + "&timezone=Australia/Brisbane&minutely_15=precipitation&format=flatbuffers";
@@ -287,7 +303,6 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
         }
     }
 
-    // 显示当前地理位置的降雨量数据
     private void showCurrentLocationWeather() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             fusedLocationClient.getLastLocation()
@@ -298,7 +313,6 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                                 double latitude = location.getLatitude();
                                 double longitude = location.getLongitude();
                                 updateUserLocationInDatabase(latitude, longitude);
-
                                 fetchCurrentLocationWeather(latitude, longitude);
                             } else {
                                 Toast.makeText(Map.this, "Unable to get current location", Toast.LENGTH_SHORT).show();
@@ -308,12 +322,9 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
         }
     }
 
-    // 在地图上显示降雨量
     private void displayRainfallOnMap(byte[] responseIN, double latitude, double longitude) {
-        // 解析从 OpenMeteo 获取的二进制数据
         ByteBuffer buffer = ByteBuffer.wrap(responseIN).order(ByteOrder.LITTLE_ENDIAN);
 
-        // 通过 WeatherApiResponse 获取天气数据
         WeatherApiResponse mApiResponse = WeatherApiResponse.getRootAsWeatherApiResponse((ByteBuffer) buffer.position(4));
         VariablesWithTime minutely15 = mApiResponse.minutely15();
         VariableWithValues precipitation = new VariablesSearch(minutely15)
@@ -322,31 +333,27 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
 
         LatLng currentLocation = new LatLng(latitude, longitude);
 
-        // 在地图上添加一个标记，当前位置为红色
         Marker marker = googleMap.addMarker(new MarkerOptions()
                 .position(currentLocation)
                 .title("Current location")
                 .snippet("Precipitation: " + precipitation.values(0) + " mm")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))); // 红色标记
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
         marker.setTag("current_location");
         marker.showInfoWindow();
 
-        // 绘制表示降雨量的圆圈，颜色根据降雨量不同而变化
         CircleOptions circleOptions = new CircleOptions()
                 .center(currentLocation)
-                .radius(100)  // 半径
-                .strokeColor(Color.BLACK)  // 圆圈边缘颜色
-                .fillColor(getColorForRainfall(precipitation.values(0)))  // 圆圈填充颜色，基于降雨量变化
-                .strokeWidth(5);  // 边缘宽度
+                .radius(100)
+                .strokeColor(Color.BLACK)
+                .fillColor(getColorForRainfall(precipitation.values(0)))
+                .strokeWidth(5);
         googleMap.addCircle(circleOptions);
 
-        // 检查是否存在洪水风险
         checkFloodRisk(precipitation.values(0), currentLocation);
 
         buffer.clear();
     }
 
-    // Fetch GeoJSON data from ArcGIS
     private void fetchGeoJsonData() {
         Request request = new Request.Builder()
                 .url(GEOJSON_URL)
@@ -375,7 +382,6 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
         });
     }
 
-    // Parse the GeoJSON and add markers manually
     private void parseAndAddGeoJsonMarkers(JSONObject geoJsonData) {
         try {
             JSONArray features = geoJsonData.getJSONArray("features");
@@ -387,20 +393,17 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                 double longitude = coordinates.getDouble(0);
                 double latitude = coordinates.getDouble(1);
 
-                // Extract properties like "name" if present
                 JSONObject properties = feature.getJSONObject("properties");
                 String facilityName = properties.optString("name", "Accessibility");
 
-                // Add a blue marker for accessibility facilities
                 LatLng location = new LatLng(latitude, longitude);
                 Marker marker = googleMap.addMarker(new MarkerOptions()
                         .position(location)
                         .title(facilityName)
                         .snippet("Accessibility Facility")
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE))); // 蓝色标记
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
                 marker.setTag("facility_location");
 
-                // Fetch rainfall data for the facility
                 fetchFacilityRainfall(latitude, longitude, marker);
             }
         } catch (JSONException e) {
@@ -408,7 +411,6 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
         }
     }
 
-    // Fetch rainfall data for facility location and display it on the marker
     private void fetchFacilityRainfall(double latitude, double longitude, Marker marker) {
         String url = "https://api.open-meteo.com/v1/forecast?latitude=" + latitude
                 + "&longitude=" + longitude
@@ -435,7 +437,6 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
         });
     }
 
-    // Display rainfall data for facility location on the marker
     private void displayFacilityRainfall(byte[] responseIN, Marker marker) {
         ByteBuffer buffer = ByteBuffer.wrap(responseIN).order(ByteOrder.LITTLE_ENDIAN);
 
@@ -445,7 +446,6 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                 .variable(Variable.precipitation)
                 .first();
 
-        // Update marker snippet with precipitation data
         marker.setSnippet("Precipitation: " + precipitation.values(0) + " mm");
         marker.showInfoWindow();
 
@@ -494,7 +494,7 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                 .position(currentLocation)
                 .title("Current location")
                 .snippet(precipitationText)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))); // 红色标记
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
         marker.setTag("current_location");
         marker.showInfoWindow();
 
@@ -522,7 +522,6 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                     .setPositiveButton("Confirm", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            // 跳转到 AlertNotification 页面，并传递数据
                             Intent intent = new Intent(Map.this, AlertNotification.class);
                             intent.putExtra("precipitation", precipitation);
                             intent.putExtra("latitude", location.latitude);
@@ -552,17 +551,16 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
 
     private int getColorForRainfall(float precipitation) {
         if (precipitation <= 10) {
-            return Color.argb(100, 173, 216, 230);
+            return Color.argb(100, 173, 216, 230);  // Light blue
         } else if (precipitation <= 25) {
-            return Color.argb(150, 255, 102, 102);
+            return Color.argb(150, 255, 102, 102);  // Light red
         } else if (precipitation <= 50) {
-            return Color.argb(150, 255, 0, 0);
+            return Color.argb(150, 255, 0, 0);  // Dark red
         } else {
-            return Color.argb(150, 139, 0, 0);
+            return Color.argb(150, 139, 0, 0);  // Very dark red
         }
     }
 
-    // 只有当前位置才可以手动设置降水量
     private void showRainfallInputDialog(Marker marker) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Setting the rainfall");
@@ -605,65 +603,30 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
         builder.show();
     }
 
-    // 新增方法：更新数据库中的用户位置
     private void updateUserLocationInDatabase(double latitude, double longitude) {
-        // 检查用户是否已登录
         if (login_activity.currentUser != null) {
             String username = login_activity.currentUser.username;
-            // 更新数据库中的经纬度
             usersRef.child(username).child("latitude").setValue(latitude);
             usersRef.child(username).child("longitude").setValue(longitude);
-            // 可选：更新本地的 currentUser 对象
             login_activity.currentUser.setLocation(latitude, longitude);
         } else {
-            // 用户未登录，提示用户登录，并阻止定位功能
             Toast.makeText(Map.this, "Please log in to update location", Toast.LENGTH_SHORT).show();
-            // 引导用户到登录页面
             Intent intent = new Intent(Map.this, login_activity.class);
             startActivity(intent);
-            // 禁用获取用户位置
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                googleMap.setMyLocationEnabled(false); // 禁用地图的用户位置功能
+                googleMap.setMyLocationEnabled(false);
             }
         }
     }
 
-    // New method: Get group members' information
-    //如何使用下列代码获取用户信息：
-//    getGroupMembersInfo(new OnGroupMembersInfoRetrievedListener() {
-//        @Override
-//        public void onGroupMembersInfoRetrieved(List<GroupMemberInfo> groupMembers) {
-//            if (groupMembers == null) {
-//                // 用户未登录
-//                Toast.makeText(Map.this, "请先登录", Toast.LENGTH_SHORT).show();
-//            } else if (groupMembers.isEmpty()) {
-//                // 未找到群组成员
-//                Toast.makeText(Map.this, "未找到群组成员", Toast.LENGTH_SHORT).show();
-//            } else {
-//                // 处理群组成员信息
-//                for (GroupMemberInfo member : groupMembers) {
-//                    // 例如，在地图上添加标记
-//                    if (member.latitude != null && member.longitude != null) {
-//                        LatLng memberLocation = new LatLng(member.latitude, member.longitude);
-//                        googleMap.addMarker(new MarkerOptions()
-//                                .position(memberLocation)
-//                                .title("用户: " + member.phoneNumber)
-//                                .snippet("备注: " + member.remark));
-//                    }
-//                }
-//            }
-//        }
-//    });
     public void getGroupMembersInfo(OnGroupMembersInfoRetrievedListener listener) {
         if (login_activity.currentUser == null) {
-            // 用户未登录，通过回调返回 null
             listener.onGroupMembersInfoRetrieved(null);
             return;
         }
         String currentUserPhone = login_activity.currentUser.username;
         DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("users");
 
-        // 获取当前用户的 groups
         usersRef.child(currentUserPhone).child("groups").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -672,7 +635,6 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                     final int[] counter = {(int) snapshot.getChildrenCount()};
 
                     if (counter[0] == 0) {
-                        // 未找到群组成员
                         listener.onGroupMembersInfoRetrieved(groupMembers);
                         return;
                     }
@@ -685,13 +647,10 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot contactSnapshot) {
                                 if (contactSnapshot.exists()) {
-                                    // 获取群组成员的经纬度信息
                                     Double latitude = contactSnapshot.child("latitude").getValue(Double.class);
                                     Double longitude = contactSnapshot.child("longitude").getValue(Double.class);
 
-                                    // 判断是否存在经纬度信息
                                     if (latitude == null || longitude == null) {
-                                        // 经纬度为空，说明该群组成员未登录或未设置位置
                                         GroupMemberInfo memberInfo = new GroupMemberInfo(
                                                 contactPhone,
                                                 null,
@@ -700,7 +659,6 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                                         );
                                         groupMembers.add(memberInfo);
                                     } else {
-                                        // 经纬度存在，说明该群组成员已登录并设置了位置
                                         GroupMemberInfo memberInfo = new GroupMemberInfo(
                                                 contactPhone,
                                                 latitude,
@@ -726,24 +684,21 @@ public class Map extends AppCompatActivity implements OnMapReadyCallback {
                         });
                     }
                 } else {
-                    // 未找到 groups 节点
                     listener.onGroupMembersInfoRetrieved(new ArrayList<>());
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                // 发生错误
                 listener.onGroupMembersInfoRetrieved(null);
             }
         });
     }
 
-    // Callback interface
     public interface OnGroupMembersInfoRetrievedListener {
         void onGroupMembersInfoRetrieved(List<GroupMemberInfo> groupMembers);
     }
-    // Data class for group member information
+
     public static class GroupMemberInfo {
         public String phoneNumber;
         public Double latitude;
